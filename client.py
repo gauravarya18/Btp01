@@ -44,66 +44,69 @@ while(True):
     equ=input("\n Please provide the input or Q to quit: ")
     Encoding(equ)
     
-    #binary of the whole message
+    #binary of the whole message excluding xor
     strfinal=""
 
     #stores the parity
     xorfinal=""
-
+    flag=False
     while(L.qsize()>0):
         p=L.get()
-        
         if(p==-1):
-            s.send(qu.encode())
-        else:
-            Convert_Binary(p)
+            flag=True
+            break
+        
+        Convert_Binary(p)
             
-            #temporary binary conversion
-            str1=""
+        #temporary binary conversion
+        str1=""
 
-            #storing the xor of current slot of 6
-            tmp=0
-            for i in  range(6):
+        #storing the xor of current slot of 6
+        tmp=0
+        for i in  range(6):
 
-                y=temp.get()
-                if(y==0):
-                    str1+="0"
-                    tmp^=0
-                else:
-                    str1+="1"
-                    tmp^=1
+            y=temp.get()
+            if(y==0):
+                str1+="0"
+                tmp^=0
+            else:
+                str1+="1"
+                tmp^=1
                 
-            #reset
-            temp = queue.LifoQueue(maxsize=6)
-            
-            strfinal+=str1
-            xorfinal+=str(tmp)
+        #reset            
+        temp = queue.LifoQueue(maxsize=6)
+        
+        strfinal+=str1
+        xorfinal+=str(tmp)
             
     
+    if(not(flag)):
+        #induce error
+        inp=input("Position you want to induce error in ")
 
-    #induce error
-    inp=input("Position you want to induce error in ")
+        x=int(strfinal[int(inp)])
+        x=(x+1)%2
 
-    x=int(strfinal[int(inp)])
-    x=(x+1)%2
-
-    #error induced message at position inp
-    strToSend=strfinal[:int(inp)]+str(x)+strfinal[int(inp)+1:]
-
-
-    # print(xorfinal)
-    # print(strfinal)
-    
-    s.send(strToSend.encode())
-    s.send(xorfinal.encode())
+        #error induced message at position inp
+        strToSend=strfinal[:int(inp)]+str(x)+strfinal[int(inp)+1:]
 
 
-    result = s.recv(1024).decode()       # 1024 is recv_size
+                # print(xorfinal)
+                # print(strfinal)
+                
+        s.send(strToSend.encode())
+        s.send(xorfinal.encode())
+    else:
+        s.send(qu.encode())
+        s.send(qu.encode())
+
+    result = s.recv(1024).decode()       
+    # 1024 is recv_size
     if result == "Quit":
         print("Closing client connection, goodbye")
         break
     else:
         print("orgnl message:", strfinal)
-        print("The answer is:", result)
+        print("The answer is:", result)           
 
 s.close 				 # Close the socket when done

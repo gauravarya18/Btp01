@@ -18,7 +18,7 @@ print("Server is up and running")
 while True:
      c, addr = s.accept() 		# Establish connection with client.
      print('Got connection from', addr)
-     print("\n ~ is corrsponding to the errorneous bit")
+     print(" '~'  is corrsponding to the errorneous bit")
      count=0
      Num=0
      while True:
@@ -31,7 +31,7 @@ while True:
 
         # print(message)
         # print(parity)
-
+        print("--------------------------------------------------------------------------------------------------------------------------------------")
         if message == "Q" or message == "q" or message == "Quit" or message == "quit" or message == "quit()":
             c.send("Quit".encode())
             break
@@ -62,7 +62,7 @@ while True:
                     print(Decode(Num-1))
             
 
-            print("\n")
+            
             c.send(message.encode())
           
 
