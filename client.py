@@ -1,35 +1,49 @@
-import socket		 	 # Import socket module
+import socket		 	 
 import sys
 import ipaddress
-import queue 
-temp = queue.LifoQueue(maxsize=6)
-def Convert_Binary(x):
-    #print(x)
-    while(x>0):
-        temp.put(x%2)
-        x//=2
+import queue
+import time
+import binascii
 
-    while(temp.qsize()<6):
-        temp.put(0)
+def text_to_bits(text, encoding='utf-8', errors='surrogatepass'):
+    bits = bin(int(binascii.hexlify(text.encode(encoding, errors)), 16))[2:]
+    return bits.zfill(8 * ((len(bits) + 7) // 8))
 
+def text_from_bits(bits, encoding='utf-8', errors='surrogatepass'):
+    n = int(bits, 2)
+    return int2bytes(n).decode(encoding, errors)
 
-def  Encoding(equ):
-    if(equ=="quit"):
-        L.put(-1)
-    else:   
-        Len=len(equ)
-        for i in range(Len):
-            if(equ[i]==' '):
-                L.put(0)
-            else:
-                x=ord(equ[i])-97
-                if(x<0):
-                    x+=32
-                L.put(x+1)
-        
-        
-L = queue.Queue(maxsize=20)
+def int2bytes(i):
+    hex_string = '%x' % i
+    n = len(hex_string)
+    return binascii.unhexlify(hex_string.zfill(n + (n & 1)))
 
+def convertToBinary(Tstr):
+    return text_to_bits(Tstr)
+
+def ApplicationLayer(Data):
+    print("In Application layer")
+    print("Header LH5 added to the data")
+    AppData="LH5-"+Data
+    print(AppData)
+    time.sleep(5)
+    return AppData
+
+def TransportLayer(AppData):
+    print("In Transport Layer")
+    print("Header LH4 added to the data")
+    TransData="LH4-"+AppData
+    print(TransData)
+    time.sleep(5)
+    return TransData
+
+def NetworkLayer(TransData):
+    print("In Network Layer")
+    print("Header LH3 added to the data")
+    NetData="LH3-"+TransData
+    print(NetData)
+    time.sleep(5)
+    return NetData
 
 s = socket.socket() 	  		 # Create a socket object
 hostname = socket.gethostname()    
@@ -40,55 +54,47 @@ s.connect((host, port))                           # Connecting to server
 print("The IP address of the server is:", host)
 print("The port number of the server is:", port)
 qu="quit"
+
+
 while(True):
-    equ=input("\n Please provide the input or Q to quit: ")
-    Encoding(equ)
-    
-    #binary of the whole message excluding xor
-    strfinal=""
+    Data=input("\n Please provide the input Data or 'quit' to quit: ")
 
-    #stores the parity
-    xorfinal=""
     flag=False
-    while(L.qsize()>0):
-        p=L.get()
-        if(p==-1):
-            flag=True
-            break
-        
-        Convert_Binary(p)
-            
-        #temporary binary conversion
-        str1=""
 
-        #storing the xor of current slot of 6
-        tmp=0
-        for i in  range(6):
+    if(Data=="quit"):
+        flag=True
 
-            y=temp.get()
-            if(y==0):
-                str1+="0"
-                tmp^=0
-            else:
-                str1+="1"
-                tmp^=1
-                
-        #reset            
-        temp = queue.LifoQueue(maxsize=6)
-        
-        strfinal+=str1
-        xorfinal+=str(tmp)
-            
-    
     if(not(flag)):
+        #Data in application layer
+        Data=ApplicationLayer(Data)
+        print("---------------------------------------------")
+
+        #Data in Transport Layer
+        Data=TransportLayer(Data)
+        print("---------------------------------------------")
+
+        #Data in Network Layer
+        Data=NetworkLayer(Data)
+        print("---------------------------------------------")
+
+
+        strInBinary=convertToBinary(Data)
+        xorfinal=""
+
+        for i in range(0,len(strInBinary),8):
+            tmp=0
+            for j in range(i,i+8):
+                tmp^=0 if int(strInBinary[j])==0 else 1
+            xorfinal+=str(tmp)
+
         #induce error
         inp=input("Position you want to induce error in ")
 
-        x=int(strfinal[int(inp)])
+        x=int(strInBinary[int(inp)])
         x=(x+1)%2
 
         #error induced message at position inp
-        strToSend=strfinal[:int(inp)]+str(x)+strfinal[int(inp)+1:]
+        strToSend=strInBinary[:int(inp)]+str(x)+strInBinary[int(inp)+1:]
 
 
                 # print(xorfinal)
@@ -102,11 +108,12 @@ while(True):
 
     result = s.recv(1024).decode()       
     # 1024 is recv_size
+
     if result == "Quit":
         print("Closing client connection, goodbye")
         break
     else:
-        print("orgnl message:", strfinal)
+        print("orgnl message:", strInBinary)
         print("The answer is:", result)           
 
 s.close 				 # Close the socket when done
