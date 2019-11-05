@@ -62,7 +62,41 @@ def ReverseNetworkLayer(TransData):
     print(NetData)
     return NetData
 
+def Org_ReverseApplicationLayer(Data):
+    
+    idx=0
+    for i in range(len(Data)):
+        if (Data[i]=='-'):
+            idx=i
+            break
+    
+    AppData=Data[idx+1:]
+    print(AppData)
+    return AppData
 
+def Org_ReverseTransportLayer(AppData):
+    
+    idx=0
+    for i in range(len(AppData)):
+        if (AppData[i]=='-'):
+            idx=i
+            break
+    
+    TransData=AppData[idx+1:]
+    print(TransData)
+    return TransData
+
+def Org_ReverseNetworkLayer(TransData):
+
+    idx=0
+    for i in range(len(TransData)):
+        if (TransData[i]=='-'):
+            idx=i
+            break
+    
+    NetData=TransData[idx+1:]
+    print(NetData)
+    return NetData
 
 s = socket.socket() 	  		 # Create a socket object
 host = socket.gethostname()                    # Get local machine name
@@ -81,14 +115,31 @@ while True:
      while True:
         #recieve the final string (error induced)
         message=c.recv(1024).decode()
-
+        # Original Message
+        
         #recieve the xor string
-        parity=c.recv(1024).decode()
+        parity_temp=c.recv(1024).decode()
+        # Org_Str=c.recv(1024).decode()
+        # print(parity_temp)
+        parity=""
+        Org_Str=""
+        flag=True
+        for j in range(0,len(parity_temp)):
+            if(parity_temp[j]=="$"):
+                flag=False
+                continue
+            if(flag):
+                parity+=parity_temp[j]
+            else:
+                Org_Str+=parity_temp[j]
+        # print(parity)
+        # print(Org_Str)
+
         j=0
 
         # print(message)
         # print(parity)
-        print("------------------------------------------------")
+        print("-----------------------**********************************************************-------------------------")
         if message == "quit":
             c.send("Quit".encode())
             break
@@ -112,28 +163,33 @@ while True:
                         tmp^=0
                 
                 tempChar=text_from_bits(message[j*8:j*8+8])
-
+                # Org_tempChar=text_from_bits(Org_message[j*8:j*8+8])
+                # Org_Str+=str(Org_tempChar)
                 if(parity[j]!=str(tmp)):
                     #corresponding to the erroreneous bit
                     # print("~",Decode(Num-1))
-                    AnsStr+="~"
+                    # AnsStr+="~"
                     AnsStr+=str(tempChar)
                 else:
                     # print(Decode(Num-1))
                     AnsStr+=str(tempChar)
             
             print(AnsStr)
-
+            print(Org_Str)
+            
             AnsStr=ReverseNetworkLayer(AnsStr)
+            Org_Str=Org_ReverseNetworkLayer(Org_Str)
             print("---------------------------------------------")
 
             AnsStr=ReverseTransportLayer(AnsStr)
+            Org_Str=Org_ReverseTransportLayer(Org_Str)
             print("---------------------------------------------")
 
             AnsStr=ReverseApplicationLayer(AnsStr)
-            print("---------------------------------------------")
+            Org_Str=Org_ReverseTransportLayer(Org_Str)
+            # print("---------------------------------------------")
 
-            print(AnsStr)
+            # print(AnsStr)
             c.send(message.encode())
           
 

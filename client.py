@@ -58,7 +58,7 @@ qu="quit"
 
 while(True):
     Data=input("\n Please provide the input Data or 'quit' to quit: ")
-
+    size=len(Data)
     flag=False
 
     if(Data=="quit"):
@@ -66,6 +66,7 @@ while(True):
 
     if(not(flag)):
         #Data in application layer
+        print("-----------------------**********************************************************-------------------------")
         Data=ApplicationLayer(Data)
         print("---------------------------------------------")
 
@@ -77,7 +78,7 @@ while(True):
         Data=NetworkLayer(Data)
         print("---------------------------------------------")
 
-
+        # print(Data)
         strInBinary=convertToBinary(Data)
         xorfinal=""
 
@@ -88,22 +89,31 @@ while(True):
             xorfinal+=str(tmp)
 
         #induce error
-        inp=input("Position you want to induce error in ")
+        size=96+size*8
 
-        x=int(strInBinary[int(inp)])
-        x=(x+1)%2
+        inp=input("Position you want to induce error(97-"+str(size)+") in or press -1 if you don't want any error ")
+        if(inp=="-1"):
+            strToSend=strInBinary
+        else:
+            x=int(strInBinary[int(inp)])
+            x=(x+1)%2
 
-        #error induced message at position inp
-        strToSend=strInBinary[:int(inp)]+str(x)+strInBinary[int(inp)+1:]
+            #error induced message at position inp
+            strToSend=strInBinary[:int(inp)]+str(x)+strInBinary[int(inp)+1:]
 
 
                 # print(xorfinal)
                 # print(strfinal)
-                
+        # print(strToSend)     
+        xorfinal+="$"+Data
+        # print(xorfinal)
         s.send(strToSend.encode())
         s.send(xorfinal.encode())
+        # s.send(Data.encode())
+        
     else:
         s.send(qu.encode())
+        # s.send(qu.encode())
         s.send(qu.encode())
 
     result = s.recv(1024).decode()       
