@@ -91,7 +91,17 @@ def NetworkLayer(TransData):
     print(NetData)
     time.sleep(5)
     return NetData
+#1 2 4 5 7     1  3 4 6 7    2 3 4 8      8 7 6 5
+def Redundancy_Bit(Data):
+    r1=int(Data[7],2)^int(Data[6],2)^int(Data[4],2)^int(Data[3],2)^int(Data[1],2)
+    r2=int(Data[5],2)^int(Data[4],2)^int(Data[7],2)^int(Data[2],2)^int(Data[1],2)
+    r4=int(Data[4],2)^int(Data[5],2)^int(Data[6],2)^int(Data[0],2)
+    r8=int(Data[0],2)^int(Data[1],2)^int(Data[2],2)^int(Data[3],2)
 
+    ans=str(r8)+str(r4)+str(r2)+str(r1)
+
+    return ans
+    
 s = socket.socket() 	  		 # Create a socket object
 hostname = socket.gethostname()    
 IPAddr = socket.gethostbyname(hostname)
@@ -137,7 +147,7 @@ while(True):
 
         #induce error
         size=96+size*8
-        Tech=input("Enter  \n1.) XOR Detection  \n2.) CRC Detection\n")
+        Tech=input("Enter  \n1.) XOR Detection  \n2.) CRC Detection\n3.)Hamming Code Detection and Correction\n")
         inp=input("Position you want to induce error(97-"+str(size)+") in or press -1 if you don't want any error::")
         if(inp=="-1"):
             strToSend=strInBinary
@@ -158,7 +168,14 @@ while(True):
                 ans+=encodeData(strInBinary[i*8:i*8+8],key)
 
             s.send(("01"+strToSend).encode()) 
-            s.send(ans.encode())          
+            s.send(ans.encode())   
+        else:  
+            ans="" 
+            for i in range(0,len(strInBinary)//8):
+                ans+=Redundancy_Bit(strInBinary[i*8:i*8+8])
+            s.send(("10"+strToSend).encode()) 
+            # print(ans)
+            s.send(ans.encode()) 
         
     
         
