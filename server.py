@@ -3,6 +3,57 @@ import sys
 import binascii
 import time
 
+def xor(a, b): 
+   
+    
+    result = [] 
+   
+     
+    for i in range(1, len(b)): 
+        if a[i] == b[i]: 
+            result.append('0') 
+        else: 
+            result.append('1') 
+   
+    return ''.join(result) 
+   
+   
+
+def mod2div(divident, divisor): 
+   
+     
+    pick = len(divisor) 
+   
+    tmp = divident[0 : pick] 
+   
+    while pick < len(divident): 
+   
+        if tmp[0] == '1': 
+   
+            tmp = xor(divisor, tmp) + divident[pick] 
+   
+        else:  
+            tmp = xor('0'*pick, tmp) + divident[pick] 
+   
+        
+        pick += 1
+   
+    if tmp[0] == '1': 
+        tmp = xor(divisor, tmp) 
+    else: 
+        tmp = xor('0'*pick, tmp) 
+   
+    checkword = tmp 
+    return checkword 
+   
+def decodeData(data, key): 
+   
+    l_key = len(key)  
+    appended_data = data + '0'*(l_key-1) 
+    remainder = mod2div(appended_data, key) 
+   
+    return remainder 
+  
 def text_to_bits(text, encoding='utf-8', errors='surrogatepass'):
     bits = bin(int(binascii.hexlify(text.encode(encoding, errors)), 16))[2:]
     return bits.zfill(8 * ((len(bits) + 7) // 8))
@@ -115,83 +166,109 @@ while True:
      while True:
         #recieve the final string (error induced)
         message=c.recv(1024).decode()
-        # Original Message
-        
-        #recieve the xor string
-        parity_temp=c.recv(1024).decode()
-        # Org_Str=c.recv(1024).decode()
-        # print(parity_temp)
-        parity=""
-        Org_Str=""
-        flag=True
-        for j in range(0,len(parity_temp)):
-            if(parity_temp[j]=="$"):
-                flag=False
-                continue
-            if(flag):
-                parity+=parity_temp[j]
-            else:
-                Org_Str+=parity_temp[j]
-        # print(parity)
-        # print(Org_Str)
-
-        j=0
-
-        # print(message)
-        # print(parity)
+        Technique=message[0]+message[1]
+        Tech=int(Technique, 2)
+        # print(Tech)
+        data=message[2:]
+        # print(data)
         print("-----------------------**********************************************************-------------------------")
         if message == "quit":
             c.send("Quit".encode())
             break
         else:
-            
-            AnsStr=""
-            #roving over the parity string
-            for j in range(0,len(parity)):
 
-                #to store the number
-                Num=0
+            if(Tech==0):
+                #recieve the xor string
+                parity=c.recv(1024).decode()
+                AnsStr=""
+                flag=True
+                #roving over the parity string
+                for j in range(0,len(parity)):
 
-                #to store the corresponding temp. xor
-                tmp=0
+                    #to store the number
+                    Num=0
 
-                #roving over the corresponding message string
-                for i  in  range(j*8,j*8+8):
-                    if(message[i]=="1"):
-                        tmp^=1
+                    #to store the corresponding temp. xor
+                    tmp=0
+
+                    #roving over the corresponding message string
+                    for i  in  range(j*8,j*8+8):
+                        if(data[i]=="1"):
+                            tmp^=1
+                        else:
+                            tmp^=0
+                    
+                    tempChar=text_from_bits(data[j*8:j*8+8])
+                    if(parity[j]!=str(tmp)):
+                        #corresponding to the erroreneous bit
+                        flag=False
+                        AnsStr+="~"
+                        AnsStr+=str(tempChar)
                     else:
-                        tmp^=0
+                        AnsStr+=str(tempChar)
                 
-                tempChar=text_from_bits(message[j*8:j*8+8])
-                # Org_tempChar=text_from_bits(Org_message[j*8:j*8+8])
-                # Org_Str+=str(Org_tempChar)
-                if(parity[j]!=str(tmp)):
-                    #corresponding to the erroreneous bit
-                    # print("~",Decode(Num-1))
-                    # AnsStr+="~"
-                    AnsStr+=str(tempChar)
-                else:
-                    # print(Decode(Num-1))
+                print(AnsStr)
+                
+                AnsStr=ReverseNetworkLayer(AnsStr)
+                print("---------------------------------------------")
+
+                AnsStr=ReverseTransportLayer(AnsStr)
+                print("---------------------------------------------")
+
+                AnsStr=ReverseApplicationLayer(AnsStr)
+
+                if flag: 
+                    c.send(("THANK you Data ->"+data + " Received No error FOUND").encode())
+                else: 
+                    c.send(("Error in data").encode())
+
+            elif(Tech==1):
+                Crc=c.recv(1024).decode()
+                key = "1001"
+                temp = "0" * (len(key) - 1)
+                flag=True
+            
+                    
+                
+                
+                AnsStr=""
+                #roving over the parity string
+                for i in range(0,len(data)//8):
+
+                    #to store the number
+                    Num=0
+
+                    #to store the corresponding temp. xor
+                    tmp=0
+                    
+                    tempChar=text_from_bits(data[i*8:i*8+8])
+                    ans = decodeData(data[i*8:i*8+8]+Crc[i*3:i*3+3], key)
+                    if(ans!=temp):
+                        AnsStr+="~"
+                        flag=False
                     AnsStr+=str(tempChar)
             
-            print(AnsStr)
-            print(Org_Str)
+
+                
+                print(AnsStr)
+                AnsStr=ReverseNetworkLayer(AnsStr)
+
+                print("---------------------------------------------")
+
+                AnsStr=ReverseTransportLayer(AnsStr)
             
-            AnsStr=ReverseNetworkLayer(AnsStr)
-            Org_Str=Org_ReverseNetworkLayer(Org_Str)
-            print("---------------------------------------------")
+                print("---------------------------------------------")
 
-            AnsStr=ReverseTransportLayer(AnsStr)
-            Org_Str=Org_ReverseTransportLayer(Org_Str)
-            print("---------------------------------------------")
+                AnsStr=ReverseApplicationLayer(AnsStr)
+                
 
-            AnsStr=ReverseApplicationLayer(AnsStr)
-            Org_Str=Org_ReverseTransportLayer(Org_Str)
-            # print("---------------------------------------------")
+                # If remainder is all zeros then no error occured 
+                 
+                if flag: 
+                    c.send(("THANK you Data ->"+data + " Received No error FOUND").encode())
+                else: 
+                    c.send(("Error in data").encode())
 
-            # print(AnsStr)
-            c.send(message.encode())
-          
-
+            
      c.close() 			# Close the connection.
      

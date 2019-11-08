@@ -5,6 +5,53 @@ import queue
 import time
 import binascii
 
+def xor(a, b): 
+    result = [] 
+   
+    
+    for i in range(1, len(b)): 
+        if a[i] == b[i]: 
+            result.append('0') 
+        else: 
+            result.append('1') 
+   
+    return ''.join(result) 
+   
+   
+def mod2div(divident, divisor): 
+   
+    pick = len(divisor) 
+   
+    tmp = divident[0 : pick] 
+   
+    while pick < len(divident): 
+   
+        if tmp[0] == '1': 
+            tmp = xor(divisor, tmp) + divident[pick] 
+        else:   
+            tmp = xor('0'*pick, tmp) + divident[pick] 
+   
+        pick += 1
+   
+    if tmp[0] == '1': 
+        tmp = xor(divisor, tmp) 
+    else: 
+        tmp = xor('0'*pick, tmp) 
+   
+    checkword = tmp 
+    return checkword 
+   
+
+def encodeData(data, key): 
+   
+    l_key = len(key) 
+
+    appended_data = data + '0'*(l_key-1) 
+    remainder = mod2div(appended_data, key) 
+   
+    codeword = remainder 
+    return codeword     
+
 def text_to_bits(text, encoding='utf-8', errors='surrogatepass'):
     bits = bin(int(binascii.hexlify(text.encode(encoding, errors)), 16))[2:]
     return bits.zfill(8 * ((len(bits) + 7) // 8))
@@ -90,8 +137,8 @@ while(True):
 
         #induce error
         size=96+size*8
-
-        inp=input("Position you want to induce error(97-"+str(size)+") in or press -1 if you don't want any error ")
+        Tech=input("Enter  \n1.) XOR Detection  \n2.) CRC Detection\n")
+        inp=input("Position you want to induce error(97-"+str(size)+") in or press -1 if you don't want any error::")
         if(inp=="-1"):
             strToSend=strInBinary
         else:
@@ -101,19 +148,22 @@ while(True):
             #error induced message at position inp
             strToSend=strInBinary[:int(inp)]+str(x)+strInBinary[int(inp)+1:]
 
+        if(Tech=="1"):
+            s.send(("00"+strToSend).encode())
+            s.send(xorfinal.encode())
+        elif(Tech=="2"):
+            key = "1001"
+            ans=""
+            for i in range(0,len(strInBinary)//8):
+                ans+=encodeData(strInBinary[i*8:i*8+8],key)
 
-                # print(xorfinal)
-                # print(strfinal)
-        # print(strToSend)     
-        xorfinal+="$"+Data
-        # print(xorfinal)
-        s.send(strToSend.encode())
-        s.send(xorfinal.encode())
-        # s.send(Data.encode())
+            s.send(("01"+strToSend).encode()) 
+            s.send(ans.encode())          
+        
+    
         
     else:
         s.send(qu.encode())
-        # s.send(qu.encode())
         s.send(qu.encode())
 
     result = s.recv(1024).decode()       
@@ -123,7 +173,7 @@ while(True):
         print("Closing client connection, goodbye")
         break
     else:
-        print("orgnl message:", strInBinary)
+        # print("orgnl message:", strInBinary)
         print("The answer is:", result)           
 
 s.close 				 # Close the socket when done
