@@ -107,14 +107,25 @@ def Redundancy_Bit(Data,TemperedData):
 
     return Ans
 
-def Physical_Layer(ans):
+def Physical_Layer(ans,choice):
     data=[]
-    flag=True
-    for i in  range (len(ans)):
-        if(ans[i]=="1"):
-            flag=not(flag)
-        if(flag):
-            data.append(i+1)
+    if(choice=="1"):
+        flag=True
+        for i in  range (len(ans)):
+            if(ans[i]=="1"):
+                flag=not(flag)
+            if(flag):
+                data.append(i+1)
+    elif(choice=="2"):
+        for i in  range (0,2*len(ans),2):
+            print(i)
+            if(ans[i//2]=="0"):
+                data.append(i+1)
+            else:
+                data.append(i+2)
+            
+
+    
     bindata = binary_data(data)
     xaxis = np.arange(0, data[-1] + 1)
     yaxis = np.array(bindata)
@@ -135,7 +146,7 @@ qu="quit"
 
 
 while(True):
-    Data=input("\n Please provide the input Data or 'quit' to quit: ")
+    Data=input("\nPlease provide the input Data or 'quit' to quit: ")
     size=len(Data)
     flag=False
 
@@ -144,7 +155,7 @@ while(True):
 
     if(not(flag)):
         #Data in application layer
-        print("-----------------------**********************************************************-------------------------")
+        print("-----------------------****************-------------------------")
         Data=ApplicationLayer(Data)
         print("---------------------------------------------")
 
@@ -174,6 +185,7 @@ while(True):
         size=84+size*7-1
         Tech=input("Enter  \n1.) XOR Detection  \n2.) CRC Detection\n3.)Hamming Code Detection and Correction\n")
         inp=input("Position you want to induce error(84-"+str(size)+") in or press -1 if you don't want any error::")
+        choice=input("Choice of your Physical Layer Encoding Scheme \n1.)NRZ-I\n2.)Manchester\n")
         if(inp=="-1"):
             strToSend=strInBinary
         else:
@@ -184,7 +196,7 @@ while(True):
             strToSend=strInBinary[:int(inp)]+str(x)+strInBinary[int(inp)+1:]
 
         if(Tech=="1"):
-            Physical_Layer("00"+strToSend)
+            Physical_Layer(("00"+strToSend),choice)
             s.send(("00"+strToSend).encode())
             s.send(xorfinal.encode())
         elif(Tech=="2"):
@@ -192,7 +204,7 @@ while(True):
             ans=""
             for i in range(0,len(strInBinary)//7):
                 ans+=encodeData(strInBinary[i*7:i*7+7],key)
-            Physical_Layer("01"+strToSend)
+            Physical_Layer(("01"+strToSend),choice)
             s.send(("01"+strToSend).encode()) 
             s.send(ans.encode())   
         else:  
@@ -201,7 +213,7 @@ while(True):
                 ans+=Redundancy_Bit(strInBinary[i*7:i*7+7],strToSend[i*7:i*7+7])
             # print(strInBinary)
             # print(strToSend)
-            Physical_Layer("10"+ans)
+            Physical_Layer(("10"+ans),choice)
             s.send(("10"+ans).encode()) 
             # print(ans)
             #s.send(ans.encode()) 
