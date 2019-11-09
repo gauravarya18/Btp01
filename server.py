@@ -164,7 +164,7 @@ port = int(4444)
 s.bind((host, port)) 			 # Bind to the port
 s.listen(5) 			         # Now wait for client connection.
 print("Server is up and running")
-print(("LH3-")[0:2])
+
 
 while True:
      c, addr = s.accept() 		# Establish connection with client.
@@ -290,7 +290,7 @@ while True:
                 
                     ans = Redundancy_Bit(data[i*11:i*11+11])
                     strInBinary=data[i*11:i*11+11]
-                    
+
                     Ans=strInBinary[0:3]+strInBinary[4:7]+strInBinary[8]
                     tempChar=text_from_bits(Ans)
                     AnsStr+=str(tempChar)

@@ -4,7 +4,11 @@ import ipaddress
 import queue
 import time
 import binascii
+import numpy as np
+from matplotlib.pyplot import step, show
 
+def binary_data(data):
+    return [1 if x in data else 0 for x in range(data[-1] + 1)]
 def xor(a, b): 
     result = [] 
    
@@ -102,7 +106,23 @@ def Redundancy_Bit(Data,TemperedData):
     
 
     return Ans
-    
+
+def Physical_Layer(ans):
+    data=[]
+    flag=True
+    for i in  range (len(ans)):
+        if(ans[i]=="1"):
+            flag=not(flag)
+        if(flag):
+            data.append(i+1)
+    bindata = binary_data(data)
+    xaxis = np.arange(0, data[-1] + 1)
+    yaxis = np.array(bindata)
+    step(xaxis, yaxis)
+    show()
+
+
+
 s = socket.socket() 	  		 # Create a socket object
 hostname = socket.gethostname()    
 IPAddr = socket.gethostbyname(hostname)
@@ -164,6 +184,7 @@ while(True):
             strToSend=strInBinary[:int(inp)]+str(x)+strInBinary[int(inp)+1:]
 
         if(Tech=="1"):
+            Physical_Layer("00"+strToSend)
             s.send(("00"+strToSend).encode())
             s.send(xorfinal.encode())
         elif(Tech=="2"):
@@ -171,7 +192,7 @@ while(True):
             ans=""
             for i in range(0,len(strInBinary)//7):
                 ans+=encodeData(strInBinary[i*7:i*7+7],key)
-
+            Physical_Layer("01"+strToSend)
             s.send(("01"+strToSend).encode()) 
             s.send(ans.encode())   
         else:  
@@ -180,6 +201,7 @@ while(True):
                 ans+=Redundancy_Bit(strInBinary[i*7:i*7+7],strToSend[i*7:i*7+7])
             # print(strInBinary)
             # print(strToSend)
+            Physical_Layer("10"+ans)
             s.send(("10"+ans).encode()) 
             # print(ans)
             #s.send(ans.encode()) 
