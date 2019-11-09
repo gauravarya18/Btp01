@@ -92,15 +92,16 @@ def NetworkLayer(TransData):
     time.sleep(5)
     return NetData
 #1 2 4 5 7     1  3 4 6 7    2 3 4 8      8 7 6 5
-def Redundancy_Bit(Data):
-    r1=int(Data[7],2)^int(Data[6],2)^int(Data[4],2)^int(Data[3],2)^int(Data[1],2)
-    r2=int(Data[5],2)^int(Data[4],2)^int(Data[7],2)^int(Data[2],2)^int(Data[1],2)
-    r4=int(Data[4],2)^int(Data[5],2)^int(Data[6],2)^int(Data[0],2)
-    r8=int(Data[0],2)^int(Data[1],2)^int(Data[2],2)^int(Data[3],2)
+def Redundancy_Bit(Data,TemperedData):
+    
+    r1=int(Data[6],2)^int(Data[5],2)^int(Data[3],2)^int(Data[2],2)^int(Data[0],2)
+    r2=int(Data[4],2)^int(Data[3],2)^int(Data[6],2)^int(Data[1],2)^int(Data[0],2)
+    r4=int(Data[3],2)^int(Data[4],2)^int(Data[5],2)
+    r8=int(Data[0],2)^int(Data[1],2)^int(Data[2],2)
+    Ans=TemperedData[0:3]+str(r8)+TemperedData[3:6]+str(r4)+TemperedData[6]+str(r2)+str(r1)
+    
 
-    ans=str(r8)+str(r4)+str(r2)+str(r1)
-
-    return ans
+    return Ans
     
 s = socket.socket() 	  		 # Create a socket object
 hostname = socket.gethostname()    
@@ -136,19 +137,23 @@ while(True):
         print("---------------------------------------------")
 
         # print(Data)
-        strInBinary=convertToBinary(Data)
+        strInBinary=""
+        for i in range (len(Data)):
+            temp_=convertToBinary(Data[i])
+            strInBinary+=temp_[1:]
+        
         xorfinal=""
 
-        for i in range(0,len(strInBinary),8):
+        for i in range(0,len(strInBinary),7):
             tmp=0
-            for j in range(i,i+8):
+            for j in range(i,i+7):
                 tmp^=0 if int(strInBinary[j])==0 else 1
             xorfinal+=str(tmp)
 
         #induce error
-        size=96+size*8
+        size=84+size*7-1
         Tech=input("Enter  \n1.) XOR Detection  \n2.) CRC Detection\n3.)Hamming Code Detection and Correction\n")
-        inp=input("Position you want to induce error(97-"+str(size)+") in or press -1 if you don't want any error::")
+        inp=input("Position you want to induce error(84-"+str(size)+") in or press -1 if you don't want any error::")
         if(inp=="-1"):
             strToSend=strInBinary
         else:
@@ -164,18 +169,20 @@ while(True):
         elif(Tech=="2"):
             key = "1001"
             ans=""
-            for i in range(0,len(strInBinary)//8):
-                ans+=encodeData(strInBinary[i*8:i*8+8],key)
+            for i in range(0,len(strInBinary)//7):
+                ans+=encodeData(strInBinary[i*7:i*7+7],key)
 
             s.send(("01"+strToSend).encode()) 
             s.send(ans.encode())   
         else:  
             ans="" 
-            for i in range(0,len(strInBinary)//8):
-                ans+=Redundancy_Bit(strInBinary[i*8:i*8+8])
-            s.send(("10"+strToSend).encode()) 
+            for i in range(0,len(strInBinary)//7):
+                ans+=Redundancy_Bit(strInBinary[i*7:i*7+7],strToSend[i*7:i*7+7])
+            # print(strInBinary)
+            # print(strToSend)
+            s.send(("10"+ans).encode()) 
             # print(ans)
-            s.send(ans.encode()) 
+            #s.send(ans.encode()) 
         
     
         

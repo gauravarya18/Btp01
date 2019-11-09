@@ -148,22 +148,15 @@ def TempNetworkLayer(TransData):
     NetData=TransData[idx+1:]
     return NetData
 
-def Redundancy_Bit(Data,key):
-    r1=int(Data[7],2)^int(Data[6],2)^int(Data[4],2)^int(Data[3],2)^int(Data[1],2)^int(key[3],2)
-    r2=int(Data[5],2)^int(Data[4],2)^int(Data[7],2)^int(Data[2],2)^int(Data[1],2)^int(key[2],2)
-    r4=int(Data[4],2)^int(Data[5],2)^int(Data[6],2)^int(Data[0],2)^int(key[1],2)
-    r8=int(Data[0],2)^int(Data[1],2)^int(Data[2],2)^int(Data[3],2)^int(key[0],2)
+def Redundancy_Bit(Data):
+    r1=int(Data[0],2)^int(Data[2],2)^int(Data[4],2)^int(Data[6],2)^int(Data[8],2)^int(Data[10],2)
+    r2=int(Data[9],2)^int(Data[8],2)^int(Data[5],2)^int(Data[4],2)^int(Data[1],2)^int(Data[0],2)
+    r4=int(Data[6],2)^int(Data[4],2)^int(Data[5],2)^int(Data[7],2)
+    r8=int(Data[0],2)^int(Data[1],2)^int(Data[2],2)^int(Data[3],2)
 
-    ans=r1*8+r2*4+r4*2+r8*1
-    # print(ans+"\n")
-    if ans>8:
-        return 12-ans
-    elif ans>4:
-        return 11-ans
-    elif ans>2:
-        return 10-ans
-    else:
-        return -1
+    ans=r1*1+r2*2+r4*4+r8*8
+    return 11-ans
+    
 
 s = socket.socket() 	  		 # Create a socket object
 host = socket.gethostname()                    # Get local machine name
@@ -171,7 +164,7 @@ port = int(4444)
 s.bind((host, port)) 			 # Bind to the port
 s.listen(5) 			         # Now wait for client connection.
 print("Server is up and running")
-
+print(("LH3-")[0:2])
 
 while True:
      c, addr = s.accept() 		# Establish connection with client.
@@ -208,13 +201,13 @@ while True:
                     tmp=0
 
                     #roving over the corresponding message string
-                    for i  in  range(j*8,j*8+8):
+                    for i  in  range(j*7,j*7+7):
                         if(data[i]=="1"):
                             tmp^=1
                         else:
                             tmp^=0
                     
-                    tempChar=text_from_bits(data[j*8:j*8+8])
+                    tempChar=text_from_bits(data[j*7:j*7+7])
                     if(parity[j]!=str(tmp)):
                         #corresponding to the erroreneous bit
                         flag=False
@@ -246,7 +239,7 @@ while True:
                 
                 AnsStr=""
                 #roving over the parity string
-                for i in range(0,len(data)//8):
+                for i in range(0,len(data)//7):
 
                     #to store the number
                     Num=0
@@ -254,8 +247,8 @@ while True:
                     #to store the corresponding temp. xor
                     tmp=0
                     
-                    tempChar=text_from_bits(data[i*8:i*8+8])
-                    ans = decodeData(data[i*8:i*8+8]+Crc[i*3:i*3+3], key)
+                    tempChar=text_from_bits(data[i*7:i*7+7])
+                    ans = decodeData(data[i*7:i*7+7]+Crc[i*3:i*3+3], key)
                     if(ans!=temp):
                         AnsStr+="~"
                         flag=False
@@ -282,40 +275,40 @@ while True:
                 else: 
                     c.send(("Error in data").encode())
             else:
-                Redundancy_Code=c.recv(1024).decode()
+                #Redundancy_Code=c.recv(1024).decode()
                 flag=True
                 AnsStr=""
                 Correct_Str=""
                 #roving over the parity string
-                for i in range(0,len(data)//8):
+                for i in range(0,len(data)//11):
 
                     #to store the number
                     Num=0
 
                     #to store the corresponding temp. xor
                     tmp=0
+                
+                    ans = Redundancy_Bit(data[i*11:i*11+11])
+                    strInBinary=data[i*11:i*11+11]
                     
-                    tempChar=text_from_bits(data[i*8:i*8+8])
+                    Ans=strInBinary[0:3]+strInBinary[4:7]+strInBinary[8]
+                    tempChar=text_from_bits(Ans)
                     AnsStr+=str(tempChar)
-                    temp_str=""
-                    ans = Redundancy_Bit(data[i*8:i*8+8],Redundancy_Code[i*4:i*4+4])
+
                     
-                    if(ans!=-1):
-                        strInBinary=data[i*8:i*8+8]
-                        x=int(strInBinary[int(8-ans)])
+                    if(ans!=11):
+                        
+                        x=int(strInBinary[int(ans)])
                         x=(x+1)%2
-                        # print(ans)
-                        strToSend=strInBinary[:int(8-ans)]+str(x)+strInBinary[int(8-ans)+1:]
-                        # print(strToSend)
-                        # print(strInBinary)
-                        # print(text_to_bits("H"))
-                        orgchar=text_from_bits(strToSend)
+                        strToSend=strInBinary[:int(ans)]+str(x)+strInBinary[int(ans)+1:]
+                        Ans=strToSend[0:3]+strToSend[4:7]+strToSend[8]
+                        orgchar=text_from_bits(Ans)
                         Correct_Str+=str(orgchar)
                         flag=False
                     else:
                         Correct_Str+=str(tempChar)
             
-
+                    
                 
                 print(AnsStr)
                 AnsStr=ReverseNetworkLayer(AnsStr)
